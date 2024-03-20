@@ -1,0 +1,131 @@
+import pygame
+import random
+import sys
+
+# Inicialización de Pygame
+pygame.init()
+
+# Definición de colores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+
+# Tamaño de la pantalla
+WIDTH, HEIGHT = 800, 600
+GRID_SIZE = 20
+
+# Definir la fuente para mostrar el puntaje y las vidas
+font = pygame.font.Font(None, 36)
+
+# Clase Snake
+class Snake:
+    def __init__(self):
+        self.x = WIDTH // 2
+        self.y = HEIGHT // 2
+        self.dx = GRID_SIZE
+        self.dy = 0
+        self.body = [(self.x, self.y)]
+        self.length = 1
+
+    def move(self):
+        self.x += self.dx
+        self.y += self.dy
+        self.body.insert(0, (self.x, self.y))
+        if len(self.body) > self.length:
+            self.body.pop()
+
+    def draw(self, screen):
+        for segment in self.body:
+            pygame.draw.rect(screen, WHITE, (segment[0], segment[1], GRID_SIZE, GRID_SIZE))
+
+# Clase Food
+class Food:
+    def __init__(self):
+        self.x = random.randint(0, (WIDTH - GRID_SIZE) // GRID_SIZE) * GRID_SIZE
+        self.y = random.randint(0, (HEIGHT - GRID_SIZE) // GRID_SIZE) * GRID_SIZE
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, RED, (self.x, self.y, GRID_SIZE, GRID_SIZE))
+
+# Función principal del juego
+def main():
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Mathematical Snake Adventure")
+    clock = pygame.time.Clock()
+
+    snake = Snake()
+    food = Food()
+    score = 0
+    lives = 3
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    if snake.dy != GRID_SIZE:  # Evitar que la serpiente se vaya hacia atrás
+                        snake.dx = 0
+                        snake.dy = -GRID_SIZE
+                elif event.key == pygame.K_DOWN:
+                    if snake.dy != -GRID_SIZE:
+                        snake.dx = 0
+                        snake.dy = GRID_SIZE
+                elif event.key == pygame.K_LEFT:
+                    if snake.dx != GRID_SIZE:
+                        snake.dx = -GRID_SIZE
+                        snake.dy = 0
+                elif event.key == pygame.K_RIGHT:
+                    if snake.dx != -GRID_SIZE:
+                        snake.dx = GRID_SIZE
+                        snake.dy = 0
+
+        # Verificar colisiones con la comida
+        if snake.body[0][0] == food.x and snake.body[0][1] == food.y:
+            snake.length += 1
+            score += 10
+            food = Food()
+
+        # Verificar colisiones con los bordes de la pantalla
+        if snake.body[0][0] < 0 or snake.body[0][0] >= WIDTH or snake.body[0][1] < 0 or snake.body[0][1] >= HEIGHT:
+            lives -= 1
+            if lives == 0:
+                running = False
+            else:
+                snake = Snake()
+                food = Food()
+
+        # Verificar colisiones consigo misma
+        for segment in snake.body[1:]:
+            if snake.body[0] == segment:
+                lives -= 1
+                if lives == 0:
+                    running = False
+                else:
+                    snake = Snake()
+                    food = Food()
+
+        # Mover serpiente
+        snake.move()
+
+        # Dibujar pantalla
+        screen.fill(BLACK)
+        snake.draw(screen)
+        food.draw(screen)
+
+        # Dibujar puntaje y vidas en la pantalla
+        score_surface = font.render(f"Score: {score}", True, WHITE)
+        screen.blit(score_surface, (10, 10))
+        lives_surface = font.render(f"Lives: {lives}", True, WHITE)
+        screen.blit(lives_surface, (10, 50))
+
+        pygame.display.flip()
+        clock.tick(10)  # Velocidad de la serpiente
+
+    pygame.quit()
+    sys.exit()
+
+if __name__ == "__main__":
+    main()
+
